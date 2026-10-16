@@ -7,7 +7,8 @@ const reservaSchema = new mongoose.Schema(
         sala: { type: String, required: true, enum: ['Sala Norte', 'Sala Sur', 'Sala Multimedia'], default: 'Sala Sur' },
         fecha: { type: String, required: true, trim: true },
         turno: { type: String, required: true, enum: ['Mañana', 'Tarde', 'Noche'], default: 'Tarde' },
-        personas: { type: Number, required: true, min: 1, max: 6 }
+        personas: { type: Number, required: true, min: 1, max: 6 },
+        estado: { type: String, required: true, enum: ['pendiente', 'confirmada'], default: 'pendiente' }
     },
     { collection: "reservas" },
 );
