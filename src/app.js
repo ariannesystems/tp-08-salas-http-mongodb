@@ -2,25 +2,19 @@ const express = require("express");
 const expressLayouts = require("express-ejs-layouts");
 const morgan = require("morgan");
 const path = require("node:path");
-
 const {
   crearIdentificadorSolicitud,
   medirDuracion,
 } = require("./middleware/solicitudes");
+const { crearManejadorErrores } = require("./middleware/errores");
 const { crearControladorReservas } = require("./controladores/reservas");
 const { crearRouterReservas } = require("./rutas/reservas");
-
 function crearApp({ servicioReservas, formatoRegistro }) {
-  //Crear una instancia de la aplicación express
   const app = express();
-
-  const controladorReservas = crearControladorReservas(servicioReservas);
-  const reservasRouter = crearRouterReservas(controladorReservas);
-
+  const controlador = crearControladorReservas(servicioReservas);
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "..", "views"));
   app.set("layout", "layouts/main");
-
   app.use(morgan(formatoRegistro));
   app.use(crearIdentificadorSolicitud());
   app.use(medirDuracion);
@@ -28,21 +22,27 @@ function crearApp({ servicioReservas, formatoRegistro }) {
   app.use(express.static(path.join(__dirname, "..", "public")));
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
-
   app.get("/", (req, res) => {
-    res
-      .status(200)
-      .render("inicio", { titulo: "Reservas de salas de estudio" });
+    res.render("inicio", { titulo: "Reservas de salas de estudio" });
   });
-  app.get("/estado", controladorReservas.listarApi);
-  app.use("/reservas", reservasRouter);
+
+  app.get("/api/reservas", controlador.listarApi);
+  app.use("/reservas", crearRouterReservas(controlador));
   app.use((req, res) => {
+    if (req.path.startsWith("/api/")) {
+      return res.status(404).json({ error: "Ruta no encontrada." });
+    }
     res.status(404).render("no-encontrado", {
       titulo: "Página no encontrada",
       mensaje: "La dirección solicitada no existe.",
     });
   });
-
+  app.use(
+    crearManejadorErrores({
+      vistaFormulario: "reservas/nueva",
+      tituloFormulario: "Nueva Reserva",
+    }),
+  );
   return app;
 }
 module.exports = { crearApp };

@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
-const { Producto } = require("../modelos/reservas");
+const { Reserva } = require("../modelos/reservas");
 
-function representarReserva(documento) 
-{
+function representarReserva(documento) {
   return {
     id: documento._id.toString(),
     estudiante: documento.estudiante,
@@ -11,53 +10,49 @@ function representarReserva(documento)
     fecha: documento.fecha,
     turno: documento.turno,
     personas: documento.personas,
-    estado: documento.estado
+    estado: documento.estado,
   };
 }
 
-function crearServicioReservasMongo() 
-{
-  async function listar(categoria) {
-
+function crearServicioReservasMongo() {
+  async function listar(sala) {
     const filtro = {};
 
-    if (categoria !== undefined) 
-    {
-      if (typeof categoria !== "string" || !categoria.trim()) 
-      {
-        const error = new Error("Categoría inválida");
+    if (sala !== undefined) {
+      if (typeof sala !== "string" || !sala.trim()) {
+        const error = new Error("Sala inválida");
         error.codigo = "FILTRO_INVALIDO";
         throw error;
       }
-      filtro.categoria = categoria.trim();
+      filtro.sala = sala.trim();
     }
 
-    const documentos = await Producto.find(filtro).lean();
-    return documentos.map(representarProducto);
+    const documentos = await Reserva.find(filtro).lean();
+    return documentos.map(representarReserva);
   }
-  async function obtenerPorId(id) 
-  {
-    if (!mongoose.isObjectIdOrHexString(id)) 
-    {
+
+  async function obtenerPorId(id) {
+    if (!mongoose.isObjectIdOrHexString(id)) {
       const error = new Error("Identificador inválido");
       error.codigo = "ID_INVALIDO";
       throw error;
     }
 
-    const documento = await Producto.findById(id).lean();
-    return documento ? representarProducto(documento) : null;
+    const documento = await Reserva.findById(id).lean();
+    return documento ? representarReserva(documento) : null;
   }
 
-  async function crear(datos) 
-  {
-    const documento = await Producto.create({
-      nombre: datos.nombre,
-      categoria: datos.categoria,
-      precio: datos.precio,
-      descripcion: datos.descripcion,
+  async function crear(datos) {
+    const documento = await Reserva.create({
+      estudiante: datos.estudiante,
+      email: datos.email,
+      sala: datos.sala,
+      fecha: datos.fecha,
+      turno: datos.turno,
+      personas: datos.personas,
     });
 
-    return representarProducto(documento);
+    return representarReserva(documento);
   }
 
   return { listar, obtenerPorId, crear };

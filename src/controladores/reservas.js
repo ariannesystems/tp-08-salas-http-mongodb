@@ -1,11 +1,11 @@
-function crearControladorReservas(servicioReservas) {
-  function listar(req, res) {
-    res.status(200).render("reservas/lista", {
+function crearControladorReservas(servicio) {
+  async function listar(req, res) {
+    const reservas = await servicio.listar();
+    res.render("reservas/lista", {
       titulo: "Lista de reservas",
-      reservas: servicioReservas.listar(),
+      reservas,
     });
   }
-
   function mostrarFormulario(req, res) {
     res.render("reservas/nueva", {
       titulo: "Nueva Reserva",
@@ -13,32 +13,24 @@ function crearControladorReservas(servicioReservas) {
       valores: {},
     });
   }
-
-  function mostrarDetalle(req, res) {
-    const id = Number(req.params.id);
-    const reserva = servicioReservas.obtenerPorId(id);
-
+  async function mostrarDetalle(req, res) {
+    const reserva = await servicio.obtenerPorId(req.params.id);
     if (!reserva) {
       return res.status(404).render("no-encontrado", {
         titulo: "Reserva no encontrada",
         mensaje: "No existe una reserva con ese identificador.",
       });
     }
-    res.render("reservas/detalle", {
-      titulo: reserva.estudiante,
-      reserva,
-    });
+    res.render("reservas/detalle", { titulo: reserva.estudiante, reserva });
   }
-
-  function crear(req, res) {
-    servicioReservas.crear(req.reservasValidada);
+  async function crear(req, res) {
+    await servicio.crear(req.reservaValidada);
     res.redirect("/reservas");
   }
-
-  function listarApi(req, res) {
-    res.status(200).json(servicioReservas.listar());
+  async function listarApi(req, res) {
+    const reservas = await servicio.listar(req.query.sala);
+    res.json(reservas);
   }
-
   return { listar, mostrarFormulario, mostrarDetalle, crear, listarApi };
 }
 module.exports = { crearControladorReservas };

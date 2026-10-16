@@ -1,60 +1,54 @@
 const { leerConfiguracion } = require("./config/entorno");
-const { crearServicioReservas } = require("./servicios/reservas");
+const {
+  conectarBaseDatos,
+  desconectarBaseDatos,
+} = require("./config/base-datos");
+
+const { crearServicioReservasMongo } = require("./servicios/reservas-mongo");
+
 const { crearApp } = require("./app");
 
-const reservasIniciales = [
-  {
-    id: 1,
-    estudiante: "Juan Pérez",
-    email: "juan@gmail.com",
-    sala: "Sala Norte",
-    fecha: "05/09/2026",
-    turno: "Mañana",
-    personas: 2,
-  },
-  {
-    id: 2,
-    estudiante: "María López",
-    email: "maria@gmail.com",
-    sala: "Sala Sur",
-    fecha: "26/09/2026",
-    turno: "Tarde",
-    personas: 4,
-  },
-  {
-    id: 3,
-    estudiante: "Carlos Gómez",
-    email: "carlos@gmail.com",
-    sala: "Sala Multimedia",
-    fecha: "27/09/2026",
-    turno: "Noche",
-    personas: 3,
-  },
-  {
-    id: 4,
-    estudiante: "Ana Rodríguez",
-    email: "ana@gmail.com",
-    sala: "Sala Norte",
-    fecha: "28/09/2026",
-    turno: "Mañana",
-    personas: 1,
-  },
-];
-
-//Funcion principal de inicio
 async function main() {
-  //Leer configuración
   const { puerto, formatoRegistro } = leerConfiguracion();
-  //Leemos el archivo JSON de reservas iniciales
-  const servicioReservas = crearServicioReservas(reservasIniciales);
+  await conectarBaseDatos();
+  const servicioReservas = crearServicioReservasMongo();
   const app = crearApp({ servicioReservas, formatoRegistro });
 
-  //Servidor escuchando listo para las peticiones
-  app.listen(puerto, () => {
-    console.log(`Servidor escuchando en http://localhost:${puerto}`);
+  const servidor = app.listen(puerto, () => {
+    console.log(`Aplicación disponible en http://localhost:${puerto}`);
+  });
+
+  let cerrando = false;
+
+  function cerrar() {
+    if (cerrando) return;
+    cerrando = true;
+    servidor.close(async () => {
+      try {
+        await desconectarBaseDatos();
+      } catch (error) {
+        console.error("Error al cerrar:", error.name);
+        process.exitCode = 1;
+      }
+    });
+  }
+  process.once("SIGINT", cerrar);
+  process.once("SIGTERM", cerrar);
+  servidor.on("error", (error) => {
+    console.error("No se pudo escuchar el puerto:", error.code);
+    process.exitCode = 1;
+    desconectarBaseDatos().catch((fallo) => {
+      console.error("Error al cerrar:", fallo.name);
+    });
   });
 }
-main().catch((error) => {
-  console.error("No se pudo iniciar la aplicación:", error);
+main().catch(async (error) => {
+  console.error("No se pudo iniciar la aplicación:", error.name);
+  console.error("Revisar entorno, DNS, red, acceso de Atlas y puerto.");
   process.exitCode = 1;
+  try {
+    await desconectarBaseDatos();
+  } catch (fallo) {
+    console.error("Error al cerrar:", fallo.name);
+  }
 });
