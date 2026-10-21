@@ -43,7 +43,7 @@ async function main() {
   });
 }
 main().catch(async (error) => {
-  console.error("No se pudo iniciar la aplicación:", error.name);
+  console.error("No se pudo iniciar la aplicación:", error.stack);
   console.error("Revisar entorno, DNS, red, acceso de Atlas y puerto.");
   process.exitCode = 1;
   try {
