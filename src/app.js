@@ -2,7 +2,10 @@ const express = require("express");
 const expressLayouts = require("express-ejs-layouts");
 const morgan = require("morgan");
 const path = require("node:path");
-const { crearIdentificadorSolicitud, medirDuracion, } = require("./middleware/solicitudes");
+const {
+  crearIdentificadorSolicitud,
+  medirDuracion,
+} = require("./middleware/solicitudes");
 const { crearManejadorErrores } = require("./middleware/errores");
 const { crearControladorReservas } = require("./controladores/reservas");
 const { crearRouterReservas } = require("./rutas/reservas");
@@ -25,7 +28,7 @@ function crearApp({ servicioReservas, formatoRegistro }) {
     res.render("inicio", { titulo: "Reservas de salas de estudio" });
   });
 
-  //app.use("/api/reservas", crearRouterReservasApi(controlador));
+  app.use("/api/reservas", crearRouterReservasApi(controlador));
   app.get("/api/reservas", controlador.listarApi);
   app.use("/reservas", crearRouterReservas(controlador));
   app.use((req, res) => {
